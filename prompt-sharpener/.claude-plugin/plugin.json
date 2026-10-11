@@ -1,0 +1,6 @@
+{
+  "name": "prompt-sharpener",
+  "version": "0.1.0",
+  "description": "Rewrites your draft into a sharper, project-aware prompt in the input box; sends only when you press Send.",
+  "types": "./types/index.d.ts"
+}

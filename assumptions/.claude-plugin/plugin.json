@@ -1,0 +1,1 @@
+{ "name": "assumptions", "version": "0.1.0", "description": "Logs the assumptions Claude makes while building; review, confirm or correct them from a side pane.", "types": "./types/index.d.ts" }

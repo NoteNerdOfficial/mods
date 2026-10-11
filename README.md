@@ -4,7 +4,7 @@ Claude Code mods: plugins that change Claude's interface or behaviour through ho
 
 | Mod | What it does |
 |---|---|
-| [assumptions](assumptions/) | Gives Claude a `log_assumption` tool and asks it to log the non-obvious assumptions it makes while building. You confirm or correct them from a side pane (`/assumptions`). |
+| [assumptions](assumptions/) | Gives Claude a `log_assumption` tool and asks it to log the non-obvious assumptions it makes while building. You confirm or correct them from a side pane (`/assumptions`). See its [README](assumptions/README.md). |
 | [prompt-sharpener](prompt-sharpener/) | Rewrites your draft into a sharper, project-aware prompt in the input box. Nothing is sent until you press Send. See its [README](prompt-sharpener/README.md). |
 
 ## Setup

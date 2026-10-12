@@ -34,7 +34,7 @@ Why it recommends by default: switching models mid-conversation throws away the 
 Caveats:
 
 - If your account can't use a picked model (Fable 5.1, for example), that turn's request fails. Use recommend mode, or edit `MODEL_IDS` and the rubric in `hooks/router.ts`.
-- The band draws above any other mod's band. A mod that draws its own band without calling `next(e)` (prompt-sharpener does this while you have a draft) hides this one if it loads first.
+- The band stacks with other mods' bands, such as prompt-sharpener's. A mod that draws a band without calling `next(e)` would still hide it.
 
 ## Testing
 

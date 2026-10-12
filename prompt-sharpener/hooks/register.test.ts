@@ -23,16 +23,16 @@ const type = ($: Engine, text: string) =>
   $.prompt.fill({ text, mode: 'replace', origin: { kind: 'engine' } })
 
 // A fake prompt box, project, and model beneath the plugin.
-const world = (on: On, reply: { isAnswered: boolean; text?: string }) => {
+const world = (on: On, reply: { isAnswered: boolean; text?: string }, hasOtherBand = false) => {
   const box = { text: VAGUE }
   const sent: string[] = []
   const asked: string[] = []
   const tints: (readonly PromptDecoration[] | undefined)[] = []
 
-  // What the engine draws when the band yields: nothing.
+  // What the engine draws when the band yields: nothing, or another mod's band.
   on('ui.render', ($, e) => {
-    const { Box } = $.ui.resolve(e)
-    return h(Box, {}) as RenderElement
+    const { Box, Button } = $.ui.resolve(e)
+    return (hasOtherBand ? h(Box, {}, h(Button, { key: 'other-mod', label: 'Other', onPress: () => {} })) : h(Box, {})) as RenderElement
   })
   on('prompt.read', () => ({ value: { text: box.text, cursor: box.text.length } }))
   on('prompt.fill', ($, e) => {
@@ -138,4 +138,15 @@ test('the ctrl+x e chord runs /enhance, which rewrites the draft without sending
 
   expect(box.text).toBe(SHARP)
   expect(sent).toEqual([])
+})
+
+test("another mod's band still shows beneath this one", async ($, on) => {
+  world(on, { isAnswered: true, text: SHARP }, true)
+  for (const surface of ['terminal', 'desktop'] as const) {
+    await type($, VAGUE)
+    const ui = await $.ui.mount({ plugin: 'prompt-sharpener', surface, ...BAND })
+    expect(await ui.find({ key: 'enhance' })).toBeDefined()
+    expect(await ui.find({ key: 'other-mod' })).toBeDefined()
+    await ui.unmount()
+  }
 })

@@ -196,12 +196,14 @@ export const register: Register = on => {
   })
 
   // Each button is its own rounded key: Enhance (or Undo once enhanced) and Send, with a hint beside them.
+  // Drawn above whatever else draws there, so other mods' bands still show.
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
-    if (e.props.hasSurvey) return next(e)
+    const below = await next(e)
+    if (e.props.hasSurvey) return below
 
     const isEnhancing = (await read($, status)) === 'enhancing'
     const isEnhanced = (await read($, original)) !== null
-    if (!isEnhancing && !(await read($, hasDraft))) return next(e)
+    if (!isEnhancing && !(await read($, hasDraft))) return below
 
     const { Box, Button, Text } = $.ui.resolve(e)
     const key = (border: string, child: RenderElement) => (
@@ -209,17 +211,23 @@ export const register: Register = on => {
         {child}
       </Box>
     )
+    const stack = (row: RenderElement) => (
+      <Box flexDirection="column">
+        {row}
+        {below}
+      </Box>
+    )
 
     if (isEnhancing) {
-      return (
+      return stack(
         <Box flexDirection="row" alignItems="center" columnGap={2}>
           {key(BLUE, <Text bold color={BLUE}>✦ Enhancing…</Text>)}
           <Text dimColor>your draft stays put until this finishes</Text>
-        </Box>
+        </Box>,
       )
     }
 
-    return (
+    return stack(
       <Box flexDirection="row" alignItems="center" columnGap={1}>
         {isEnhanced
           ? key(SLATE, <Button key="undo" plain onPress={() => undo($)}><Text>↶ Undo</Text></Button>)
@@ -234,7 +242,7 @@ export const register: Register = on => {
           </Button>
         ))}
         <Text dimColor>{isEnhanced ? ' ✓ enhanced · enter to send' : ' ctrl+x e to enhance · enter to send'}</Text>
-      </Box>
+      </Box>,
     )
   })
 }

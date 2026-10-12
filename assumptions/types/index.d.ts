@@ -6,10 +6,20 @@ export type Assumption = {
   verdict: Verdict
   correction: string
   isSent: boolean
+  // Set while the assumption sits in the archive; cleared on restore.
+  archivedAt?: number
 }
+
+export type View = 'active' | 'archived'
 
 declare module 'claude-code' {
   interface PluginState {
-    assumptions: { list: Assumption[]; editing: string | null }
+    assumptions: {
+      list: Assumption[]
+      archive: Assumption[]
+      view: View
+      editing: string | null
+      isConfirmingDelete: boolean
+    }
   }
 }

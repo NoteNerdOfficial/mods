@@ -15,13 +15,24 @@ Once something is logged, a line appears above the prompt: `◆ 2 assumptions to
 
 Sent assumptions stay in the pane, dimmed, and can't be changed. New ones you review are sent the next time you press Send.
 
+### Archive
+
+The pane has two tabs: **Active** and **Archived**.
+
+- **Archive all** (Active tab) moves every assumption on the active list into the archive, with its verdict, correction and sent state. Use it to clear the pane without losing anything.
+- The archive is kept per project between sessions, so you can come back and review older assumptions later. `/assumptions archived` opens the pane on that tab.
+- **Restore** (on each archived item) and **Restore all** move items back to the active list exactly as they were. An item that was already sent comes back dimmed.
+- **Delete archive** is the only permanent action. It asks first: **Delete N** removes only the items you saw listed, and **Keep** cancels. Active assumptions are never deleted directly. Archive them first.
+
+The active list lasts only for the session. Archive it if you want to keep it.
+
 On mobile there's no text input, so add corrections from the terminal or desktop.
 
 ## Files
 
 - `hooks/register.tsx` registers the tool, the `/assumptions` command and the prompt guidance, and renders the band and the pane. The guidance Claude sees is in `GUIDANCE`.
 - `types/index.d.ts` defines the `Assumption` shape and the mod's stored state.
-- `tests/assumptions.test.ts` logs two assumptions, confirms one, corrects the other and checks the message that gets sent, on both terminal and desktop. Run it with `claude plugin test <this folder>`.
+- `tests/assumptions.test.ts` logs two assumptions, confirms one, corrects the other and checks the message that gets sent, on both terminal and desktop. A second test archives, restores one and then all, cancels a delete and then confirms one, checking the stored archive at each step. Run it with `claude plugin test <this folder>`.
 
 ## Install elsewhere
 

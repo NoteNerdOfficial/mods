@@ -1,5 +1,5 @@
 import { atom, read, update } from 'claude-code'
-import type { EngineInterface, Register } from 'claude-code'
+import type { EngineInterface, Register, RenderElement } from 'claude-code'
 
 import type { Status } from '../types'
 import { SYSTEM_PROMPT } from './system-prompt'
@@ -11,10 +11,16 @@ const MAX_SKILLS = 40
 
 const INSTRUCTION_FILES = ['CLAUDE.md', '.claude/CLAUDE.md', 'CLAUDE.local.md']
 const SKILLS_DIR = '.claude/skills'
-// Mods cannot define keybinding actions, so Enhance borrows one that is idle while
-// composing (it only acts inside the diff dialog). Bound to a chord in keybindings.json.
-const ENHANCE_ACTION = 'diff:back'
+// Mods cannot define keybinding actions, so the chord runs this command instead:
+// "ctrl+x e": "command:enhance" in keybindings.json's Chat block. A chord-run command
+// leaves the draft in the box.
+const ENHANCE_COMMAND = 'enhance'
 const TINT = 'suggestion'
+// context-meter's teal and slate, so the mods read as one family; blue (used nowhere in the
+// meter) for the wait. The main action of the moment gets the teal key.
+const TEAL = '#20a39a'
+const SLATE = '#64748b'
+const BLUE = '#4a90d9'
 
 const status = atom({ plugin: 'prompt-sharpener', key: 'status' } as const, 'idle' as Status)
 // The draft as it was before the last enhancement, for Undo.
@@ -172,10 +178,24 @@ export const register: Register = on => {
   })
 
   on('prompt.submit', async ($, e, next) => {
-    if (e.origin.kind === 'composer') void trackDraft($, '')
+    // The chord's /enhance goes through here too, but the draft stays in the box.
+    if (e.origin.kind === 'composer' && e.text.trim() !== `/${ENHANCE_COMMAND}`) void trackDraft($, '')
     return next(e)
   }).catch(($, e, next) => next(e)) // never block a prompt: on failure, let it through
 
+  on('session.start', async ($, e, next) => {
+    const r = await next(e)
+    await $.command.register({ name: ENHANCE_COMMAND, description: 'Rewrite the draft in the prompt box into a sharper prompt (ctrl+x e)' }).catch(() => {}) // a name Claude Code already has is refused: start anyway
+    return r
+  })
+
+  // Answers at once with no output row; the band shows the progress.
+  on('command.run', { command: ENHANCE_COMMAND }, async $ => {
+    void enhance($)
+    return {}
+  })
+
+  // Each button is its own rounded key: Enhance (or Undo once enhanced) and Send, with a hint beside them.
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
     if (e.props.hasSurvey) return next(e)
 
@@ -184,30 +204,36 @@ export const register: Register = on => {
     if (!isEnhancing && !(await read($, hasDraft))) return next(e)
 
     const { Box, Button, Text } = $.ui.resolve(e)
-    const dot = <Text dimColor> · </Text>
+    const key = (border: string, child: RenderElement) => (
+      <Box borderStyle="round" borderColor={border} paddingX={1}>
+        {child}
+      </Box>
+    )
 
     if (isEnhancing) {
       return (
-        <Box flexDirection="row">
-          <Text color={TINT}>✨ Enhancing…</Text>
+        <Box flexDirection="row" alignItems="center" columnGap={2}>
+          {key(BLUE, <Text bold color={BLUE}>✦ Enhancing…</Text>)}
+          <Text dimColor>your draft stays put until this finishes</Text>
         </Box>
       )
     }
 
     return (
-      <Box flexDirection="row">
-        {isEnhanced ? (
-          <Text color="success">✓ Enhanced</Text>
-        ) : (
-          <Button key="enhance" plain hotkey="e" action={ENHANCE_ACTION} onPress={() => enhance($)}>
-            <Text color={TINT}>✨ Enhance</Text>
+      <Box flexDirection="row" alignItems="center" columnGap={1}>
+        {isEnhanced
+          ? key(SLATE, <Button key="undo" plain onPress={() => undo($)}><Text>↶ Undo</Text></Button>)
+          : key(TEAL, (
+              <Button key="enhance" plain onPress={() => enhance($)}>
+                <Text bold color={TEAL}>✦ Enhance</Text>
+              </Button>
+            ))}
+        {key(isEnhanced ? TEAL : SLATE, (
+          <Button key="send" plain onPress={() => send($)}>
+            <Text bold={isEnhanced} color={isEnhanced ? TEAL : undefined}>Send ⏎</Text>
           </Button>
-        )}
-        {isEnhanced ? dot : null}
-        {isEnhanced ? <Button key="undo" plain hotkey="u" label="Undo" onPress={() => undo($)} /> : null}
-        {dot}
-        <Button key="send" plain hotkey="s" label="Send" variant="primary" onPress={() => send($)} />
-        {isEnhanced ? null : <Text dimColor>   ctrl+x e to enhance</Text>}
+        ))}
+        <Text dimColor>{isEnhanced ? ' ✓ enhanced · enter to send' : ' ctrl+x e to enhance · enter to send'}</Text>
       </Box>
     )
   })

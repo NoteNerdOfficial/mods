@@ -1,0 +1,6 @@
+{
+  "name": "idea-shelf",
+  "version": "0.1.0",
+  "description": "Park side-ideas while Claude works, without derailing the task; send any of them later with one click.",
+  "types": "./types/index.d.ts"
+}

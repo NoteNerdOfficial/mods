@@ -4,15 +4,27 @@ A Claude Code mod that rewrites a rough draft in the prompt box into a sharper p
 
 ## Use
 
-Start typing and a line appears above the prompt: `✨ Enhance · Send   ctrl+x e to enhance`. When the box is empty the line is hidden.
+Start typing and a row of buttons appears above the prompt. Each button is its own rounded key, in the same teal and slate as context-meter. The button to press next is teal. When the box is empty the row is hidden.
 
-- **Enhance**: press `ctrl+x e` or click it. While it runs, the line reads `✨ Enhancing…`. The rewrite replaces your draft, tinted until your next edit. This never sends anything.
-- After an enhancement the line reads `✓ Enhanced · Undo · Send`. **Undo** puts your original draft back.
-- **Send** submits whatever is in the box right now, as your own message.
+```
+╭───────────╮ ╭────────╮
+│ ✦ Enhance │ │ Send ⏎ │  ctrl+x e to enhance · enter to send
+╰───────────╯ ╰────────╯
+```
 
-You can also press `ctrl+x tab` to focus the line and then use `e`, `u` or `s`. Pressing Enter in the box still sends as usual, and only when you do it.
+- **Enhance**: press `ctrl+x e`, click it, or type `/enhance`. While it runs, a blue `✦ Enhancing…` key takes the row's place. The rewrite replaces your draft, tinted until your next edit. This never sends anything.
+- After an enhancement the row reads `↶ Undo` `Send ⏎` `✓ enhanced`, and Send turns teal. **Undo** puts your original draft back.
+- **Send** submits whatever is in the box right now, as your own message. Pressing Enter in the box does the same, so Send has no shortcut of its own.
 
-The `ctrl+x e` shortcut comes from `~/.claude/keybindings.json`, which binds it to `diff:back`. Mods can't define shortcut actions of their own, so the button borrows that one. Claude Code only uses it inside the diff dialog, so it does nothing else while you're typing. To change the key, edit that binding.
+You can also press `ctrl+x tab` to focus the row, move between the buttons with Tab or the arrows, and press Enter on one.
+
+The `ctrl+x e` shortcut comes from `~/.claude/keybindings.json`. Mods can't define shortcut actions of their own, so the chord runs the mod's `/enhance` command instead, which leaves your draft in the box:
+
+```json
+{ "context": "Chat", "bindings": { "ctrl+x e": "command:enhance" } }
+```
+
+To change the key, edit that binding.
 
 ## Project context
 
@@ -28,8 +40,8 @@ If the model call fails, times out (45 s), or returns an empty reply, a toast te
 ## Files
 
 - `hooks/system-prompt.ts` holds the enhancer's instructions.
-- `hooks/register.tsx` has the band, the context gathering, and the enhance, undo and send logic. The model is set by `MODEL` (`sonnet`).
-- `hooks/register.test.ts` runs a test using "make the dashboard better" against a fake project and model. Run it with `claude plugin test <this folder>`.
+- `hooks/register.tsx` has the button row, the context gathering, and the enhance, undo and send logic. The model is set by `MODEL` (`sonnet`).
+- `hooks/register.test.ts` runs tests using "make the dashboard better" against a fake project and model. Run it with `claude plugin test <this folder>`.
 
 ## Install elsewhere
 

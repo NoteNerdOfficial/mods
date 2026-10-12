@@ -6,6 +6,7 @@ Claude Code mods: plugins that change Claude's interface or behaviour through ho
 |---|---|
 | [assumptions](assumptions/) | Gives Claude a `log_assumption` tool and asks it to log the non-obvious assumptions it makes while building. You confirm or correct them from a side pane (`/assumptions`). See its [README](assumptions/README.md). |
 | [context-meter](context-meter/) | Shows what is filling your context window above the prompt: a gauge with the compaction point marked and a ledger of who put each part there (built in, your setup, the conversation) and what's left. `/context-meter` shows or hides it. See its [README](context-meter/README.md). |
+| [idea-shelf](idea-shelf/) | Parks side-ideas while Claude works so they don't derail the task. `/idea <text>` shelves one; `/ideas` opens the shelf, where each idea can be sent to a new Claude session, edited or deleted. See its [README](idea-shelf/README.md). |
 | [prompt-sharpener](prompt-sharpener/) | Rewrites your draft into a sharper, project-aware prompt in the input box. Nothing is sent until you press Send. See its [README](prompt-sharpener/README.md). |
 
 ## Setup
@@ -42,5 +43,6 @@ The `.claude-plugin/types/` folder holds Claude Code's generated type definition
 ```sh
 claude plugin test assumptions
 claude plugin test context-meter
+claude plugin test idea-shelf
 claude plugin test prompt-sharpener
 ```

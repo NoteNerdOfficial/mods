@@ -127,3 +127,15 @@ test('a failed enhancement leaves the original prompt intact and sendable', asyn
   await ui.press({ key: 'send' })
   expect(sent).toEqual([VAGUE])
 })
+
+test('the ctrl+x e chord runs /enhance, which rewrites the draft without sending', async ($, on) => {
+  const { box, sent } = world(on, { isAnswered: true, text: SHARP })
+  await type($, VAGUE)
+  await $.command.run({ command: 'enhance', args: '', origin: { kind: 'composer' }, presentation: { isFullscreen: false, columns: 100 } })
+  // The command answers before the rewrite lands: wait for the band to show Undo.
+  const ui = await $.ui.mount({ plugin: 'prompt-sharpener', surface: 'terminal', ...BAND })
+  for (let i = 0; i < 100 && !(await ui.find({ key: 'undo' })); i++);
+
+  expect(box.text).toBe(SHARP)
+  expect(sent).toEqual([])
+})

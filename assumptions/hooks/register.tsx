@@ -7,6 +7,16 @@ const PANE = 'assumptions'
 const TOOL = 'mcp__assumptions__log_assumption'
 const list = atom({ plugin: 'assumptions', key: 'list' } as const, [])
 const editing = atom({ plugin: 'assumptions', key: 'editing' } as const, null)
+// The mods' shared look: each button its own rounded key, teal for the action to take
+// next, slate for the rest (context-meter's colors).
+const TEAL = '#20a39a'
+const SLATE = '#64748b'
+
+const keycap = (Box: any, border: string, button: unknown) => (
+  <Box borderStyle="round" borderColor={border} paddingX={1} flexShrink={0}>
+    {button}
+  </Box>
+)
 
 const GUIDANCE = `# Logging assumptions
 While building, whenever you make a non-obvious assumption the user has not confirmed (a requirement, a default, a naming or design choice, a library, a file location, a behaviour in an edge case), call the \`${TOOL}\` tool with one short sentence stating it. Do not stop to ask; log it and keep working. The user reviews these in a side pane and will send corrections. Skip trivial or already-confirmed choices.`
@@ -80,16 +90,18 @@ export const register: Register = on => {
     const { Box, Button, Text } = $.ui.resolve(e)
 
     return (
-      <Box>
-        <Text color="yellow">◆ </Text>
-        <Text dimColor>
-          {pending} assumption{pending === 1 ? '' : 's'} to review{unsent ? `, ${unsent} unsent` : ''}{' '}
+      <Box flexDirection="row" alignItems="center" columnGap={1}>
+        {keycap(Box, TEAL, (
+          <Button key="review" plain onPress={() => $.ui.open({ id: PANE, title: 'Assumptions' })}>
+            <Text bold color={TEAL}>Review</Text>
+          </Button>
+        ))}
+        <Text>
+          <Text color="yellow">◆ </Text>
+          <Text dimColor>
+            {pending} assumption{pending === 1 ? '' : 's'} to review{unsent ? `, ${unsent} unsent` : ''}
+          </Text>
         </Text>
-        <Button
-          key="review"
-          label="Review"
-          onPress={() => $.ui.open({ id: PANE, title: 'Assumptions' })}
-        />
       </Box>
     )
   })
@@ -136,18 +148,24 @@ export const register: Register = on => {
             </Text>
             {a.correction !== '' && <Text dimColor>   → {a.correction}</Text>}
             {!a.isSent && (
-              <Box>
-                <Text>   </Text>
-                <Button key={`r-${a.id}`} label="Right" onPress={() => mark(a.id, 'right')} />
-                <Text> </Text>
-                <Button
-                  key={`w-${a.id}`}
-                  label="Wrong"
-                  onPress={async () => {
-                    await mark(a.id, 'wrong')
-                    await update($, editing, () => a.id)
-                  }}
-                />
+              <Box flexDirection="row" columnGap={1} paddingLeft={3}>
+                {keycap(Box, a.verdict === 'right' ? TEAL : SLATE, (
+                  <Button key={`r-${a.id}`} plain onPress={() => mark(a.id, 'right')}>
+                    <Text bold={a.verdict === 'right'} color={a.verdict === 'right' ? TEAL : undefined}>Right</Text>
+                  </Button>
+                ))}
+                {keycap(Box, SLATE, (
+                  <Button
+                    key={`w-${a.id}`}
+                    plain
+                    onPress={async () => {
+                      await mark(a.id, 'wrong')
+                      await update($, editing, () => a.id)
+                    }}
+                  >
+                    <Text bold={a.verdict === 'wrong'}>Wrong</Text>
+                  </Button>
+                ))}
               </Box>
             )}
             {Input && edit === a.id && (
@@ -166,7 +184,13 @@ export const register: Register = on => {
           </Box>
         ))}
         {ready.length > 0 && (
-          <Button key="send" variant="primary" label={`Send ${ready.length} to Claude`} onPress={send} />
+          <Box flexDirection="row">
+            {keycap(Box, TEAL, (
+              <Button key="send" plain onPress={send}>
+                <Text bold color={TEAL}>{`Send ${ready.length} to Claude`}</Text>
+              </Button>
+            ))}
+          </Box>
         )}
       </Box>
     )

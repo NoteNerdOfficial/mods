@@ -1,0 +1,6 @@
+{
+  "name": "model-router",
+  "version": "0.1.0",
+  "description": "Recommends the right model and effort for each prompt; apply it with one press, or let auto mode route every turn.",
+  "types": "./types/index.d.ts"
+}

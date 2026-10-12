@@ -1,0 +1,10 @@
+{
+  "name": "context-meter",
+  "version": "0.2.0",
+  "description": "Your context window above the prompt: a teal CONTEXT chip, a segmented gauge with the compaction point marked, and a ledger of who put each part there (built in, your setup, the conversation) and what's left. /context-meter shows or hides it.",
+  "author": {
+    "name": "Ambursley",
+    "url": "https://github.com/NoteNerdOfficial"
+  },
+  "types": "./types/index.d.ts"
+}

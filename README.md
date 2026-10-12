@@ -5,6 +5,7 @@ Claude Code mods: plugins that change Claude's interface or behaviour through ho
 | Mod | What it does |
 |---|---|
 | [assumptions](assumptions/) | Gives Claude a `log_assumption` tool and asks it to log the non-obvious assumptions it makes while building. You confirm or correct them from a side pane (`/assumptions`). See its [README](assumptions/README.md). |
+| [context-meter](context-meter/) | Shows what is filling your context window above the prompt: a gauge with the compaction point marked and a ledger of who put each part there (built in, your setup, the conversation) and what's left. `/context-meter` shows or hides it. See its [README](context-meter/README.md). |
 | [prompt-sharpener](prompt-sharpener/) | Rewrites your draft into a sharper, project-aware prompt in the input box. Nothing is sent until you press Send. See its [README](prompt-sharpener/README.md). |
 
 ## Setup
@@ -13,7 +14,7 @@ This repo is the source of truth. `~/mods` is a symlink to it, and `~/.claude/se
 
 ```json
 "env": {
-  "CLAUDE_CODE_PLUGIN_DIRS": "~/mods/prompt-sharpener:~/mods/assumptions"
+  "CLAUDE_CODE_PLUGIN_DIRS": "~/mods/prompt-sharpener:~/mods/assumptions:~/mods/context-meter"
 }
 ```
 
@@ -40,5 +41,6 @@ The `.claude-plugin/types/` folder holds Claude Code's generated type definition
 
 ```sh
 claude plugin test assumptions
+claude plugin test context-meter
 claude plugin test prompt-sharpener
 ```

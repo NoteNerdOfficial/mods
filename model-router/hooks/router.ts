@@ -68,6 +68,19 @@ export const activeLabel = (model: string, effort?: string) => {
 export const matches = (pick: Pick, model: string, effort?: string) =>
   modelKeyOf(model) === pick.model && (effort === undefined || effort === pick.effort)
 
+// A key's border and padding, each one cell a side.
+const KEY_FRAME = 4
+
+const cells = (text: string) => [...text].length
+
+// Whether the hint will wrap after the items before it: `keys` are the boxed labels,
+// `lead` any plain text ahead of them. An estimate, as flexbox can't report wrapping.
+export const hintWraps = (hint: string, columns: number, keys: readonly string[], lead = '') => {
+  const items = keys.length + (lead ? 1 : 0)
+  const used = keys.reduce((sum, k) => sum + cells(k) + KEY_FRAME, cells(lead)) + items // a 1-cell gap after each
+  return cells(hint) > columns - used
+}
+
 export const isRoutable = (text: string) => {
   const t = text.trim()
   return t.length >= 8 && !t.startsWith('/') && !t.startsWith('!')

@@ -2,7 +2,7 @@ import { expect, mock, test } from 'claude-code/testing'
 import type { Engine, MockClock } from 'claude-code/testing'
 import type { On, RenderElement, TurnStepInput } from 'claude-code'
 
-import { parsePick } from './router'
+import { hintWraps, parsePick } from './router'
 
 const BAND = {
   component: 'AbovePrompt',
@@ -300,4 +300,12 @@ test('Exit auto during a hold sends that prompt on the current model and leaves 
   await done
   expect(steps.at(-1)?.model).toBe('claude-sonnet-5-5')
   expect(await ui.find({ key: 'exit-auto' })).toBeUndefined()
+})
+
+test('the hint is estimated to wrap only when it outgrows the room the keys leave', async () => {
+  // 'Auto' takes 4 + 4 frame + 1 gap = 9 cells; 'Keeping x' lead takes 9 + 1.
+  expect(hintWraps('a'.repeat(31), 40, ['Auto'])).toBe(false)
+  expect(hintWraps('a'.repeat(32), 40, ['Auto'])).toBe(true)
+  expect(hintWraps('a'.repeat(21), 40, ['Auto'], 'Keeping x')).toBe(false)
+  expect(hintWraps('a'.repeat(22), 40, ['Auto'], 'Keeping x')).toBe(true)
 })

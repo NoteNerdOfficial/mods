@@ -7,6 +7,7 @@ import {
   SYSTEM_PROMPT,
   activeLabel,
   classifierPrompt,
+  hintWraps,
   isRoutable,
   label,
   matches,
@@ -270,8 +271,9 @@ export const register: Register = on => {
     const lastRouted = await read($, routed)
 
     const { Box, Button, Text } = $.ui.resolve(e)
+    // Keys never shrink: the hint wraps into what room is left instead.
     const key = (border: string, child: RenderElement) => (
-      <Box borderStyle="round" borderColor={border} paddingX={1}>
+      <Box borderStyle="round" borderColor={border} paddingX={1} flexShrink={0}>
         {child}
       </Box>
     )
@@ -283,7 +285,18 @@ export const register: Register = on => {
         {below}
       </Box>
     )
-    const hint = (text: string) => <Text dimColor> {text}</Text>
+    // Centered beside the keys on one line; wrapped, it starts at their top edge and grows downward.
+    // `keys` and `lead` are what's drawn before it, for the estimate of whether it wraps.
+    const hint = (text: string, keys: readonly string[], lead = '') => (
+      <Box
+        flexGrow={1}
+        flexShrink={1}
+        minWidth={0}
+        alignSelf={hintWraps(text, e.props.bodyColumns, keys, lead) ? 'flex-start' : 'center'}
+      >
+        <Text dimColor wrap="wrap">{text}</Text>
+      </Box>
+    )
     const exitAuto = key(SLATE, (
       <Button key="exit-auto" plain onPress={() => setMode($, 'recommend')}>
         <Text>Exit auto</Text>
@@ -302,8 +315,9 @@ export const register: Register = on => {
       ))
 
     if (held) {
+      const sending = `⏸ Sending on ${label(held.pick.model, held.pick.effort)} in ${held.secondsLeft}s`
       return row(
-        key(BLUE, <Text bold color={BLUE}>⏸ Sending on {label(held.pick.model, held.pick.effort)} in {held.secondsLeft}s</Text>),
+        key(BLUE, <Text bold color={BLUE}>{sending}</Text>),
         key(SLATE, (
           <Button key="hold-override" plain onPress={() => { holdAnswer = 'override' }}>
             <Text>Override</Text>
@@ -315,7 +329,7 @@ export const register: Register = on => {
           </Button>
         )),
         exitAuto,
-        hint(`${held.pick.reason} · Override sends on ${nowLabel}`),
+        hint(`${held.pick.reason} · Override sends on ${nowLabel}`, [sending, 'Override', 'Send now', 'Exit auto']),
       )
     }
 
@@ -326,28 +340,38 @@ export const register: Register = on => {
         return row(<Text dimColor>⇢ auto routing on{last}</Text>, exitAuto)
       }
       if (fits) return row(<Text dimColor>✓ auto · {nowLabel} fits: {draftPick.reason}</Text>, exitAuto)
-      if (isKept) return row(<Text>✓ Keeping {nowLabel}</Text>, unkeep, exitAuto, hint('overridden for this prompt'))
+      if (isKept) {
+        const keeping = `✓ Keeping ${nowLabel}`
+        return row(<Text>{keeping}</Text>, unkeep, exitAuto, hint('overridden for this prompt', ['↶', 'Exit auto'], keeping))
+      }
+      const routing = `⇢ Auto: ${label(draftPick.model, draftPick.effort)}`
       return row(
-        key(TEAL, <Text bold color={TEAL}>⇢ Auto: {label(draftPick.model, draftPick.effort)}</Text>),
+        key(TEAL, <Text bold color={TEAL}>{routing}</Text>),
         keep(draftPick.text, 'Override'),
         exitAuto,
-        hint(`${draftPick.reason} · Override keeps ${nowLabel}`),
+        hint(`${draftPick.reason} · Override keeps ${nowLabel}`, [routing, 'Override', 'Exit auto']),
       )
     }
 
     if (!draftPick) return row(<Text color={BLUE} dimColor>⇢ sizing up this prompt…</Text>)
     if (fits) return row(<Text dimColor>✓ {nowLabel} fits: {draftPick.reason}</Text>)
-    if (isKept) return row(<Text dimColor>✓ Keeping {nowLabel}</Text>, unkeep, hint('pick dismissed for this prompt'))
+    if (isKept) {
+      const keeping = `✓ Keeping ${nowLabel}`
+      return row(<Text dimColor>{keeping}</Text>, unkeep, hint('pick dismissed for this prompt', ['↶'], keeping))
+    }
+    const choice = isApplied
+      ? `✓ ${label(draftPick.model, draftPick.effort)} ↶`
+      : `⇢ Use ${label(draftPick.model, draftPick.effort)}`
     return row(
       isApplied
         ? key(TEAL, (
             <Button key="undo" plain onPress={() => update($, applyNext, () => false)}>
-              <Text bold color={TEAL}>✓ {label(draftPick.model, draftPick.effort)} ↶</Text>
+              <Text bold color={TEAL}>{choice}</Text>
             </Button>
           ))
         : key(TEAL, (
             <Button key="use" plain onPress={() => useNext($)}>
-              <Text bold color={TEAL}>⇢ Use {label(draftPick.model, draftPick.effort)}</Text>
+              <Text bold color={TEAL}>{choice}</Text>
             </Button>
           )),
       keep(draftPick.text, 'Keep current'),
@@ -356,7 +380,7 @@ export const register: Register = on => {
           <Text>Auto</Text>
         </Button>
       )),
-      hint(isApplied ? `${draftPick.reason} · sends on it` : `${draftPick.reason} · you're on ${nowLabel}`),
+      hint(isApplied ? `${draftPick.reason} · sends on it` : `${draftPick.reason} · you're on ${nowLabel}`, [choice, 'Keep current', 'Auto']),
     )
   })
 }

@@ -15,7 +15,7 @@ This repo is the source of truth. `~/mods` is a symlink to it, and `~/.claude/se
 
 ```json
 "env": {
-  "CLAUDE_CODE_PLUGIN_DIRS": "~/mods/prompt-sharpener:~/mods/assumptions:~/mods/context-meter"
+  "CLAUDE_CODE_PLUGIN_DIRS": "~/mods/prompt-sharpener:~/mods/assumptions:~/mods/context-meter:~/mods/idea-shelf"
 }
 ```
 

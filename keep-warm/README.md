@@ -2,6 +2,15 @@
 
 Keeps the prompt cache warm while you're away, so your next message reads the conversation from the cache instead of paying to write it again.
 
+## Example
+
+In a short conversation, the status line says why keep-warm won't refresh: at 45k tokens, a refresh wouldn't pay for itself. `/keep-warm` shows the settings and what it has spent and saved, this session and all time:
+
+![The /keep-warm report and the keep-warm status line](docs/keep-warm.png)
+
+## How it works
+
+
 - When a turn ends, keep-warm schedules a refresh at 90% of the cache lifetime. A refresh copies the conversation and adds one short prompt with every tool denied, which reads the cache and resets its timer. Nothing is added to your conversation.
 - It refreshes only while you're idle. While a turn runs, its own requests keep the cache warm.
 - A refresh is sent only when it's expected to save at least $0.05. That assumes a 15% chance you'll return before the cache expires, the figure [cache-warmer](https://github.com/paulbkim-dev/claude-code-cache-warmer) borrowed from Pi. In practice, small conversations are never refreshed. For Opus 5.5 that means anything under about 100k tokens on the 5-minute cache.

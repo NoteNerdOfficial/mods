@@ -11,6 +11,46 @@ Claude Code mods: plugins that change Claude's interface or behaviour through ho
 | [model-router](model-router/) | Recommends the right model and effort for each prompt in a band above the prompt, where one press applies or dismisses it. Auto mode routes every prompt. You can override any pick, and Exit auto is always one press away. `/model-router` toggles auto. See its [README](model-router/README.md). |
 | [prompt-sharpener](prompt-sharpener/) | Rewrites your draft into a sharper, project-aware prompt in the input box. Nothing is sent until you press Send. See its [README](prompt-sharpener/README.md). |
 
+## Examples
+
+Screenshots from a live session in a small React todo app. Each mod's README has more.
+
+### assumptions
+
+Claude logged two assumptions while adding due dates. One is marked wrong with a correction, the other confirmed, ready to send back:
+
+![The Assumptions pane](assumptions/docs/assumptions-pane.png)
+
+### context-meter
+
+After one question: 45k of 1M used, split into built in, your setup and conversation, with 922k left before compaction.
+
+![The context meter above the prompt](context-meter/docs/context-meter.png)
+
+### idea-shelf
+
+Two ideas shelved with `/idea`, then `/ideas` opens the shelf:
+
+![The Idea shelf pane](idea-shelf/docs/idea-shelf.png)
+
+### keep-warm
+
+`/keep-warm` reports spend and savings. The status line says why it won't refresh a 45k-token conversation:
+
+![The /keep-warm report and status line](keep-warm/docs/keep-warm.png)
+
+### model-router
+
+A simple rename typed on Opus 5.5 gets a Haiku 5.5 · low recommendation:
+
+![model-router recommending Haiku 5.5 low](model-router/docs/model-router-recommend.png)
+
+### prompt-sharpener
+
+`make the dashboard better`, after `ctrl+x e`:
+
+![An enhanced prompt in the input box](prompt-sharpener/docs/prompt-sharpener-enhanced.png)
+
 ## Setup
 
 This repo is the source of truth. `~/mods` is a symlink to it, and `~/.claude/settings.json` loads each mod from there:
@@ -37,6 +77,7 @@ Each mod is a folder with:
 - `.claude-plugin/plugin.json`: the name, version and description.
 - `hooks/register.tsx`: the hook handlers.
 - `types/index.d.ts`: the mod's own types.
+- `docs/`: the screenshots its README uses.
 
 The `.claude-plugin/types/` folder holds Claude Code's generated type definitions. It is gitignored.
 
@@ -50,3 +91,7 @@ claude plugin test keep-warm
 claude plugin test model-router
 claude plugin test prompt-sharpener
 ```
+
+## License
+
+[MIT](LICENSE)

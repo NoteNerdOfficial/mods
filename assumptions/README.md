@@ -2,6 +2,16 @@
 
 A Claude Code mod that has Claude log the assumptions it makes while it works, so you can confirm or correct them afterwards instead of finding them in the code later. Logging never blocks Claude. It notes the assumption and keeps working.
 
+## Example
+
+Ask Claude to "add a due date to todos and show it next to each title". While it builds, it logs that it chose an optional ISO date string shown as-is, and a line appears above the prompt:
+
+![The assumptions band above the prompt, with a Review button](docs/assumptions-band.png)
+
+Press **Review** to open the pane. Here the first assumption is marked wrong with a correction, and the second is confirmed. **Send 2 to Claude** sends both verdicts back:
+
+![The Assumptions pane with one assumption marked wrong and corrected, and one confirmed](docs/assumptions-pane.png)
+
 ## Use
 
 Each session, the mod gives Claude a `log_assumption` tool and asks it to call it whenever it makes a non-obvious choice you haven't confirmed. That could be a requirement, a default, a name, a library, a file location or how an edge case behaves. Trivial and already-confirmed choices are skipped.

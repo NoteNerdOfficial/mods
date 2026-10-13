@@ -2,6 +2,16 @@
 
 A Claude Code mod that rewrites a rough draft in the prompt box into a sharper prompt that knows about your project. The rewrite goes back into the box so you can review and edit it. It is sent only when you press **Send**.
 
+## Example
+
+In a small React todo app, type `make the dashboard better`. The button row appears above the prompt:
+
+![The Enhance and Send buttons above a rough draft](docs/prompt-sharpener-draft.png)
+
+Press `ctrl+x e`. The draft is replaced by a rewrite that names the stack from `CLAUDE.md`, scopes the work and says when to ask. It stays in the box, tinted, until you send or undo it:
+
+![The enhanced prompt in the input box, with Undo and Send](docs/prompt-sharpener-enhanced.png)
+
 ## Use
 
 Start typing and a row of buttons appears above the prompt. Each button is its own rounded key, in the same teal and slate as context-meter. The button to press next is teal. When the box is empty the row is hidden.

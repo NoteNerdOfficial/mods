@@ -2,6 +2,12 @@
 
 A Claude Code mod that shows what is filling your context window, above the prompt. It tells you how much of the window is used, who put it there, and how much room is left before auto-compaction runs.
 
+## Example
+
+After one short question in a fresh session, the meter shows 45k of a 1M window in use: 28k built in, 12k from your setup and 5.9k of conversation, with 922k left before compaction at 967k.
+
+![The context meter above the prompt after one question](docs/context-meter.png)
+
 ## Use
 
 The meter appears above the prompt and refreshes after each turn and after a compaction:

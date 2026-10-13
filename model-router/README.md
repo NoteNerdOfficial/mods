@@ -2,6 +2,19 @@
 
 Recommends the right model and effort for each prompt, and can route every turn for you.
 
+## Example
+
+On Opus 5.5, type `rename getUser to fetchUser in src/api.ts` and pause. The band recommends Haiku 5.5 · low, with the reason:
+
+![model-router recommending Haiku 5.5 low for a simple rename](docs/model-router-recommend.png)
+
+In auto mode, the band shows what the prompt will run on before you send it. Here `add retry with backoff to the sync client and cover it with tests` gets Sonnet 5.5 · medium:
+
+![model-router in auto mode, showing Auto: Sonnet 5.5 medium with Override and Exit auto](docs/model-router-auto.png)
+
+## Use
+
+
 - When you pause typing (1.2s), Haiku 5.5 sizes up the draft and picks one of Haiku 5.5, Sonnet 5.5, Opus 5.5 or Fable 5.1, with an effort level from low to max. The rubric is balanced: it picks the cheapest setting that still does the job well, and Sonnet 5.5 · medium when unsure.
 - In **recommend** mode (the default), the band above the prompt shows the pick:
   - **⇢ Use Opus 5.5 · high** sends your next prompt on that setting. Press it again (↶) to undo.

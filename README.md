@@ -7,6 +7,7 @@ Claude Code mods: plugins that change Claude's interface or behaviour through ho
 | [assumptions](assumptions/) | Gives Claude a `log_assumption` tool and asks it to log the non-obvious assumptions it makes while building. You confirm or correct them from a side pane (`/assumptions`). See its [README](assumptions/README.md). |
 | [context-meter](context-meter/) | Shows what is filling your context window above the prompt: a gauge with the compaction point marked and a ledger of who put each part there (built in, your setup, the conversation) and what's left. `/context-meter` shows or hides it. See its [README](context-meter/README.md). |
 | [idea-shelf](idea-shelf/) | Parks side-ideas while Claude works so they don't derail the task. `/idea <text>` shelves one; `/ideas` opens the shelf, where each idea can be sent to a new Claude session, edited or deleted. See its [README](idea-shelf/README.md). |
+| [keep-warm](keep-warm/) | Keeps the prompt cache warm while you're away by refreshing it shortly before it expires, only when the expected saving pays for it and for 3 refreshes at most. `/keep-warm` shows what it has spent and saved. See its [README](keep-warm/README.md). |
 | [model-router](model-router/) | Recommends the right model and effort for each prompt in a band above the prompt, where one press applies or dismisses it. Auto mode routes every prompt. You can override any pick, and Exit auto is always one press away. `/model-router` toggles auto. See its [README](model-router/README.md). |
 | [prompt-sharpener](prompt-sharpener/) | Rewrites your draft into a sharper, project-aware prompt in the input box. Nothing is sent until you press Send. See its [README](prompt-sharpener/README.md). |
 
@@ -16,7 +17,7 @@ This repo is the source of truth. `~/mods` is a symlink to it, and `~/.claude/se
 
 ```json
 "env": {
-  "CLAUDE_CODE_PLUGIN_DIRS": "~/mods/prompt-sharpener:~/mods/assumptions:~/mods/context-meter:~/mods/idea-shelf:~/mods/model-router"
+  "CLAUDE_CODE_PLUGIN_DIRS": "~/mods/prompt-sharpener:~/mods/assumptions:~/mods/context-meter:~/mods/idea-shelf:~/mods/model-router:~/mods/keep-warm"
 }
 ```
 
@@ -45,6 +46,7 @@ The `.claude-plugin/types/` folder holds Claude Code's generated type definition
 claude plugin test assumptions
 claude plugin test context-meter
 claude plugin test idea-shelf
+claude plugin test keep-warm
 claude plugin test model-router
 claude plugin test prompt-sharpener
 ```

@@ -86,6 +86,26 @@ describe('context-meter', () => {
     expect(r.slices.map(s => s.color)).toEqual(['#64748b', '#64748b', '#20a39a', '#f0643f', 'inactive', 'inactive'])
   })
 
+  test('carves memory files and custom agents out of the built-in rows into your setup', () => {
+    const r = toReading({
+      ...BREAKDOWN,
+      memoryFiles: [{ tokens: 1_000 }, { tokens: 400 }],
+      agents: [{ tokens: 20_000 }], // more than system tools holds: clamped, so the host drops out
+    })
+    expect(r.slices.filter(s => s.kind === 'used').map(s => [s.name, s.tokens])).toEqual([
+      ['system prompt', 2_000],
+      ['memory files', 1_400],
+      ['custom agents', 12_000],
+      ['mcp tools', 2_600],
+      ['messages', 186_000],
+    ])
+    expect(groups(r).map(g => [g.label, g.tokens])).toEqual([
+      ['built in', 2_000],
+      ['your setup', 16_000],
+      ['conversation', 186_000],
+    ])
+  })
+
   test('the gauge is segmented cells with the compaction point marked', () => {
     const r = toReading(BREAKDOWN)
     for (const w of [20, 47, 84]) {

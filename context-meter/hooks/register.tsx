@@ -118,9 +118,26 @@ export function toReading(b: {
   percentage: number
   autoCompactThreshold?: number
   isAutoCompactEnabled: boolean
+  memoryFiles?: { tokens: number }[]
+  agents?: { tokens: number }[]
 }): Reading {
-  const slices: Slice[] = b.categories
-    .filter(c => c.kind !== 'deferred' && c.tokens > 0)
+  // The engine has no category rows for memory files or custom agents: their tokens sit inside
+  // system prompt and system tools. Carve them back out so they count as the user's setup.
+  const sum = (items?: { tokens: number }[]) => (items ?? []).reduce((n, i) => n + (i.tokens > 0 ? i.tokens : 0), 0)
+  const carved = [
+    { name: 'memory files', tokens: sum(b.memoryFiles), from: 'system prompt' },
+    { name: 'custom agents', tokens: sum(b.agents), from: 'system tools' },
+  ]
+  const rows = b.categories.filter(c => c.kind !== 'deferred').map(c => ({ ...c }))
+  for (const { name, tokens, from } of carved) {
+    const host = rows.find(c => c.kind === 'used' && c.name.toLowerCase() === from)
+    if (!host || tokens <= 0) continue
+    const taken = Math.min(tokens, host.tokens)
+    host.tokens -= taken // a host emptied by this drops out below rather than leaving a zero row
+    rows.splice(rows.indexOf(host) + 1, 0, { name, tokens: taken, color: host.color, kind: 'used' })
+  }
+  const slices: Slice[] = rows
+    .filter(c => c.tokens > 0)
     .map(c => ({ name: c.name.toLowerCase(), tokens: c.tokens, color: c.color, kind: c.kind as Slice['kind'] }))
   const order = { used: 0, free: 1, buffer: 2 }
   slices.sort((x, y) => order[x.kind] - order[y.kind]) // stable: used rows keep /context's order

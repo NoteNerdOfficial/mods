@@ -23,7 +23,7 @@ const type = ($: Engine, text: string) =>
   $.prompt.fill({ text, mode: 'replace', origin: { kind: 'engine' } })
 
 // A fake prompt box, project, and model beneath the plugin.
-const world = (on: On, reply: { isAnswered: boolean; text?: string }, hasOtherBand = false) => {
+const world = (on: On, reply: { isAnswered: boolean; text?: string; queue?: string[] }, hasOtherBand = false) => {
   const box = { text: VAGUE }
   const sent: string[] = []
   const asked: string[] = []
@@ -56,7 +56,7 @@ const world = (on: On, reply: { isAnswered: boolean; text?: string }, hasOtherBa
     asked.push(e.prompt)
     const usage = { input_tokens: 0, output_tokens: 0, cache_creation_input_tokens: 0, cache_read_input_tokens: 0 }
     return reply.isAnswered
-      ? { value: { isAnswered: true as const, text: reply.text ?? '', usage } }
+      ? { value: { isAnswered: true as const, text: reply.queue?.shift() ?? reply.text ?? '', usage } }
       : { value: { isAnswered: false as const, reason: 'api-error' as const, status: 529, error: 'overloaded' as const, usage } }
   })
 
@@ -149,4 +149,82 @@ test("another mod's band still shows beneath this one", async ($, on) => {
     expect(await ui.find({ key: 'other-mod' })).toBeDefined()
     await ui.unmount()
   }
+})
+
+const ASK = 'CLARIFY\n1. Which part of the dashboard?\n2. Better how: speed, looks, or data?\n3. Any pages to leave alone?'
+
+test('a thin draft gets 3 questions, the box is freed, and nothing is rewritten yet', async ($, on) => {
+  const { box, sent } = world(on, { isAnswered: true, queue: [ASK] })
+  await type($, VAGUE)
+  const ui = await $.ui.mount({ plugin: 'prompt-sharpener', surface: 'terminal', ...BAND })
+  await ui.press({ key: 'enhance' })
+
+  expect(box.text).toBe('')
+  expect(sent).toEqual([])
+  expect(await ui.find({ key: 'answer' })).toBeDefined()
+  expect(await ui.find({ key: 'skip' })).toBeDefined()
+  expect(await ui.find({ key: 'cancel' })).toBeDefined()
+  expect(await ui.find({ key: 'enhance' })).toBeUndefined()
+})
+
+test('answering rewrites with the draft and answers, fills the box, and never sends', async ($, on) => {
+  const { box, sent, asked } = world(on, { isAnswered: true, queue: [ASK, SHARP] })
+  await type($, VAGUE)
+  const ui = await $.ui.mount({ plugin: 'prompt-sharpener', surface: 'terminal', ...BAND })
+  await ui.press({ key: 'enhance' })
+  await type($, 'the stats cards\nspeed\nleave settings alone')
+  await ui.press({ key: 'answer' })
+
+  expect(box.text).toBe(SHARP)
+  expect(sent).toEqual([])
+  expect(asked[1]).toContain(VAGUE)
+  expect(asked[1]).toContain('Which part of the dashboard?')
+  expect(asked[1]).toContain('leave settings alone')
+  expect(await ui.find({ key: 'undo' })).toBeDefined()
+  await ui.press({ key: 'undo' })
+  expect(box.text).toBe(VAGUE)
+})
+
+test('Enter while questions wait delivers the answers instead of sending them', async ($, on) => {
+  const { box, sent } = world(on, { isAnswered: true, queue: [ASK, SHARP] })
+  await type($, VAGUE)
+  const ui = await $.ui.mount({ plugin: 'prompt-sharpener', surface: 'terminal', ...BAND })
+  await ui.press({ key: 'enhance' })
+  await $.prompt.submit({ text: 'the stats cards, speed, no settings', asUser: true, origin: { kind: 'composer' } } as never)
+  for (let i = 0; i < 100 && !(await ui.find({ key: 'undo' })); i++);
+
+  expect(sent).toEqual([])
+  expect(box.text).toBe(SHARP)
+})
+
+test('Skip rewrites without answers, and Cancel brings the draft back', async ($, on) => {
+  const { box, asked } = world(on, { isAnswered: true, queue: [ASK, SHARP, ASK] })
+  await type($, VAGUE)
+  const ui = await $.ui.mount({ plugin: 'prompt-sharpener', surface: 'terminal', ...BAND })
+  await ui.press({ key: 'enhance' })
+  await ui.press({ key: 'skip' })
+  expect(box.text).toBe(SHARP)
+  expect(asked[1]).toContain('skipped')
+
+  await type($, VAGUE)
+  await ui.press({ key: 'undo' })
+  await type($, VAGUE)
+  await ui.press({ key: 'enhance' })
+  await ui.press({ key: 'cancel' })
+  expect(box.text).toBe(VAGUE)
+  expect(await ui.find({ key: 'answer' })).toBeUndefined()
+})
+
+test('an empty answer is refused, and a model that keeps asking leaves the questions up', async ($, on) => {
+  const { box } = world(on, { isAnswered: true, queue: [ASK, ASK] })
+  await type($, VAGUE)
+  const ui = await $.ui.mount({ plugin: 'prompt-sharpener', surface: 'terminal', ...BAND })
+  await ui.press({ key: 'enhance' })
+  await ui.press({ key: 'answer' })
+  expect(await ui.find({ key: 'answer' })).toBeDefined()
+
+  await type($, 'the stats cards')
+  await ui.press({ key: 'answer' })
+  expect(box.text).toBe('the stats cards')
+  expect(await ui.find({ key: 'answer' })).toBeDefined()
 })

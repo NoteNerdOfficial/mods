@@ -36,6 +36,17 @@ The `ctrl+x e` shortcut comes from `~/.claude/keybindings.json`. Mods can't defi
 
 To change the key, edit that binding.
 
+## When the draft is too thin
+
+If the draft leaves out something the project context can't supply (which part of the dashboard, better in what way), Enhance asks 3 questions instead of rewriting. The same model call decides: it replies with the questions rather than a prompt.
+
+- Your draft is held aside and the box is emptied. The questions open in a side pane titled *Clarifying questions*. If the pane can't be drawn (a narrow terminal, or you closed it), they show in the band above the prompt instead.
+- Type your answers in the prompt box, a line each. Press Enter or **Answer ⏎**. Enter delivers the answers here and sends nothing to Claude.
+- The rewrite then goes into the box as usual: tinted, with Undo and Send.
+- **Skip** rewrites without answers. **Cancel** puts your original draft back.
+
+A request that names its target and outcome is rewritten right away.
+
 ## Project context
 
 Enhance reads these files from the session's working directory:

@@ -26,6 +26,14 @@ const status = atom({ plugin: 'prompt-sharpener', key: 'status' } as const, 'idl
 // The draft as it was before the last enhancement, for Undo.
 const original = atom({ plugin: 'prompt-sharpener', key: 'original' } as const, null as string | null)
 const hasDraft = atom({ plugin: 'prompt-sharpener', key: 'hasDraft' } as const, false)
+// Clarifying questions waiting for answers (empty when none), and the draft they are about.
+// The box is free for the answers meanwhile.
+const questions = atom({ plugin: 'prompt-sharpener', key: 'questions' } as const, [] as string[])
+const pending = atom({ plugin: 'prompt-sharpener', key: 'pending' } as const, null as string | null)
+
+const PANE = 'prompt-sharpener-questions'
+const PANE_TITLE = 'Clarifying questions'
+const MAX_QUESTIONS = 3
 
 // Writes only on a change, so typing does not redraw the band on every key.
 // Never throws: typing and sending must not depend on the band's bookkeeping.
@@ -85,10 +93,37 @@ const tidy = (reply: string) =>
     .replace(/^```[a-z]*\n([\s\S]*?)\n```$/, '$1')
     .trim()
 
-export const enhance = async ($: EngineInterface) => {
+// The model asks instead of rewriting with a `CLARIFY` line and numbered questions.
+// null: a normal rewrite. An empty list: it tried to ask but gave no usable question.
+export const parseClarify = (reply: string) => {
+  const lines = reply.split('\n')
+  if (!/^CLARIFY\b/i.test(lines[0]?.trim() ?? '')) return null
+  return lines
+    .slice(1)
+    .map(line => /^\s*(?:\d+[.)]|[-*])\s*(.+?)\s*$/.exec(line)?.[1])
+    .filter((q): q is string => !!q)
+    .slice(0, MAX_QUESTIONS)
+}
+
+const closePane = ($: EngineInterface) => $.ui.close({ id: PANE }).catch(() => {})
+
+// One flow for both passes. With no questions pending it reads the draft and may ask; with
+// questions pending it reads the answers (from the box, or `answers` when Enter delivered them)
+// and always rewrites. `skip` rewrites the pending draft without answers.
+export const enhance = async ($: EngineInterface, options: { answers?: string; skip?: boolean } = {}) => {
   if ((await read($, status)) === 'enhancing') return
 
-  const draft = (await $.prompt.read()).text
+  const asked = await read($, questions)
+  const isAnswering = asked.length > 0
+  const held = await read($, pending)
+  const seen = options.answers === undefined ? (await $.prompt.read()).text : null
+  const answers = options.skip ? '' : (options.answers ?? seen ?? '')
+  const draft = isAnswering ? (held ?? '') : (seen ?? '')
+
+  if (isAnswering && !options.skip && !answers.trim()) {
+    $.ui.toast('Type your answers in the prompt box, then press Answer. Or press Skip.')
+    return
+  }
   if (!draft.trim()) {
     $.ui.toast('Type a prompt first, then press Enhance.')
     return
@@ -103,22 +138,38 @@ export const enhance = async ($: EngineInterface) => {
       prompt: [
         `<project_context>\n${context || 'None found.'}\n</project_context>`,
         `<rough_request>\n${draft}\n</rough_request>`,
-        'Rewrite the rough request as described. Return only the prompt.',
+        ...(isAnswering
+          ? [
+              `<clarifying_questions>\n${asked.map((q, i) => `${i + 1}. ${q}`).join('\n')}\n</clarifying_questions>`,
+              `<answers>\n${answers.trim() || '(skipped: no answers given)'}\n</answers>`,
+              'Rewrite now, folding in the answers. Do not ask more questions. Return only the prompt.',
+            ]
+          : ['Rewrite the rough request as described. Return only the prompt.']),
       ].join('\n\n'),
       maxTokens: 2048,
       timeoutMs: TIMEOUT_MS,
     })
 
     const text = result.isAnswered ? tidy(result.text) : ''
-    if (!text) {
-      const why = result.isAnswered ? 'empty reply' : result.reason
+    const asking = text ? parseClarify(text) : null
+    if (!text || (asking && (isAnswering || asking.length === 0))) {
+      const why = result.isAnswered ? (text ? 'unusable reply' : 'empty reply') : result.reason
       $.ui.toast(`Enhance failed (${why}). Your prompt is unchanged.`)
       return
     }
 
     // Never overwrite edits made while the model was working.
-    if ((await $.prompt.read()).text !== draft) {
+    if (seen !== null && (await $.prompt.read()).text !== seen) {
       $.ui.toast('The draft changed while enhancing, so your edits were kept.')
+      return
+    }
+
+    if (asking) {
+      // Hold the draft and free the box for the answers.
+      await update($, pending, () => draft)
+      await update($, questions, () => asking)
+      await $.prompt.fill({ text: '', mode: 'replace' })
+      await $.ui.open({ id: PANE, title: PANE_TITLE }).catch(() => {}) // unplaced: the band shows them
       return
     }
 
@@ -133,11 +184,25 @@ export const enhance = async ($: EngineInterface) => {
       return
     }
     await update($, original, () => draft)
+    if (isAnswering) {
+      await update($, questions, () => [])
+      await update($, pending, () => null)
+      await closePane($)
+    }
   } catch (error) {
     $.ui.toast(`Enhance failed: ${String(error)}. Your prompt is unchanged.`)
   } finally {
     await update($, status, () => 'idle')
   }
+}
+
+// Give up on the questions: the original draft goes back in the box.
+export const cancel = async ($: EngineInterface) => {
+  const draft = await read($, pending)
+  await update($, questions, () => [])
+  await update($, pending, () => null)
+  await closePane($)
+  if (draft !== null) await $.prompt.fill({ text: draft, mode: 'replace' })
 }
 
 export const undo = async ($: EngineInterface) => {
@@ -178,10 +243,34 @@ export const register: Register = on => {
   })
 
   on('prompt.submit', async ($, e, next) => {
+    const isCommand = e.text.trim().startsWith('/')
+    // While questions wait, Enter delivers the answers instead of sending them to Claude.
+    if (e.origin.kind === 'composer' && !isCommand && (await read($, questions)).length > 0) {
+      void enhance($, { answers: e.text })
+      return { drop: 'Sharpening your prompt with those answers…' }
+    }
     // The chord's /enhance goes through here too, but the draft stays in the box.
     if (e.origin.kind === 'composer' && e.text.trim() !== `/${ENHANCE_COMMAND}`) void trackDraft($, '')
     return next(e)
   }).catch(($, e, next) => next(e)) // never block a prompt: on failure, let it through
+
+  // The questions beside the conversation; the answers go in the prompt box.
+  on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
+    const { Box, Text } = $.ui.resolve(e)
+    const asked = await read($, questions)
+    return (
+      <Box flexDirection="column" rowGap={1}>
+        <Text dimColor>Answer in the prompt box, a line each, then press Enter.</Text>
+        {asked.map((q, i) => (
+          <Text>
+            <Text bold color={TEAL}>{i + 1}. </Text>
+            {q}
+          </Text>
+        ))}
+        <Text dimColor>Skip rewrites without answers. Cancel brings your draft back.</Text>
+      </Box>
+    )
+  })
 
   on('session.start', async ($, e, next) => {
     const r = await next(e)
@@ -203,7 +292,9 @@ export const register: Register = on => {
 
     const isEnhancing = (await read($, status)) === 'enhancing'
     const isEnhanced = (await read($, original)) !== null
-    if (!isEnhancing && !(await read($, hasDraft))) return below
+    const asked = await read($, questions)
+    const isAsking = asked.length > 0
+    if (!isEnhancing && !isAsking && !(await read($, hasDraft))) return below
 
     const { Box, Button, Text } = $.ui.resolve(e)
     const key = (border: string, child: RenderElement) => (
@@ -224,6 +315,34 @@ export const register: Register = on => {
           {key(BLUE, <Text bold color={BLUE}>✦ Enhancing…</Text>)}
           <Text dimColor>your draft stays put until this finishes</Text>
         </Box>,
+      )
+    }
+
+    if (isAsking) {
+      // The pane holds the questions; where it is not drawn (a narrow terminal, or closed), the band does.
+      const isPaneUp = (await $.ui.panes().catch(() => [])).some(p => p.id === PANE && p.isPlaced)
+      return (
+        <Box flexDirection="column">
+          {!isPaneUp && (
+            <Box flexDirection="column" paddingX={1}>
+              <Text bold color={TEAL}>✦ A few questions first</Text>
+              {asked.map((q, i) => (
+                <Text>{i + 1}. {q}</Text>
+              ))}
+            </Box>
+          )}
+          <Box flexDirection="row" alignItems="center" columnGap={1}>
+            {key(TEAL, (
+              <Button key="answer" plain onPress={() => enhance($)}>
+                <Text bold color={TEAL}>✦ Answer ⏎</Text>
+              </Button>
+            ))}
+            {key(SLATE, <Button key="skip" plain onPress={() => enhance($, { skip: true })}><Text>Skip</Text></Button>)}
+            {key(SLATE, <Button key="cancel" plain onPress={() => cancel($)}><Text>Cancel</Text></Button>)}
+            <Text dimColor>{isPaneUp ? ' answer the questions in the box' : ' answer in the box, a line each'}</Text>
+          </Box>
+          {below}
+        </Box>
       )
     }
 

@@ -61,8 +61,8 @@ If the model call fails, times out (45 s), or returns an empty reply, a toast te
 ## Files
 
 - `hooks/system-prompt.ts` holds the enhancer's instructions.
-- `hooks/register.tsx` has the button row, the context gathering, and the enhance, undo and send logic. The model is set by `MODEL` (`sonnet`).
-- `hooks/register.test.ts` runs tests using "make the dashboard better" against a fake project and model. Run it with `claude plugin test <this folder>`.
+- `hooks/register.tsx` has the button row, the questions pane, the context gathering, and the enhance, answer, undo and send logic. The model is set by `MODEL` (`sonnet`).
+- `hooks/register.test.ts` runs tests using "make the dashboard better" against a fake project and model, covering the rewrite and the question flow (answer, Enter, Skip, Cancel). Run it with `claude plugin test <this folder>`.
 
 ## Install elsewhere
 

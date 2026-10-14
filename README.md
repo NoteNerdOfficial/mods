@@ -9,7 +9,7 @@ Claude Code mods: plugins that change Claude's interface or behaviour through ho
 | [idea-shelf](idea-shelf/) | Parks side-ideas while Claude works so they don't derail the task. `/idea <text>` shelves one; `/ideas` opens the shelf, where each idea can be sent to a new Claude session, edited or deleted. See its [README](idea-shelf/README.md). |
 | [keep-warm](keep-warm/) | Keeps the prompt cache warm while you're away by refreshing it shortly before it expires, only when the expected saving pays for it and for 3 refreshes at most. `/keep-warm` shows what it has spent and saved. See its [README](keep-warm/README.md). |
 | [model-router](model-router/) | Recommends the right model and effort for each prompt in a band above the prompt, where one press applies or dismisses it. Auto mode routes every prompt. You can override any pick, and Exit auto is always one press away. `/model-router` toggles auto. See its [README](model-router/README.md). |
-| [prompt-sharpener](prompt-sharpener/) | Rewrites your draft into a sharper, project-aware prompt in the input box. Nothing is sent until you press Send. See its [README](prompt-sharpener/README.md). |
+| [prompt-sharpener](prompt-sharpener/) | Rewrites your draft into a sharper, project-aware prompt in the input box. When a draft is too thin it asks 3 clarifying questions first, in a side pane, and you answer them in the prompt box. Nothing is sent until you press Send. See its [README](prompt-sharpener/README.md). |
 
 ## Examples
 

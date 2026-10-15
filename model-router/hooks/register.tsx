@@ -15,8 +15,10 @@ import {
 } from './router'
 
 const CLASSIFIER = 'claude-haiku-5-5'
-// The classifier's wait plus the hold must stay inside a hook's 10s budget.
-const TIMEOUT_MS = 5_000
+// Terminus's default hook timeout is 15s; 5s failed on slower machines. A hook's own time is
+// capped at 10s, but a $ call in flight is free, so turn.start awaits the pick (see below)
+// and only the 3s hold is paid out of turn.step's budget.
+const TIMEOUT_MS = 15_000
 const HOLD_MS = 3_000
 const HOLD_TICK_MS = 250
 const DEBOUNCE_MS = 1_200
@@ -214,6 +216,8 @@ export const register: Register = on => {
         lastPlan = { apply, pick: classify($, e.text), isHeld: current === 'auto' && apply && !wasShown }
         await update($, applyNext, () => false)
         await update($, keepText, () => null)
+        // Waits here, where the classifier call is in flight and costs no budget; turn.step would pay for it.
+        if (apply) await lastPlan.pick
       }
       if (lastPlan) plans.set(e.turnId, lastPlan)
       if (plans.size > MAX_CACHED) plans.delete(plans.keys().next().value as string)

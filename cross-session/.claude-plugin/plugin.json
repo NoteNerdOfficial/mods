@@ -1,0 +1,6 @@
+{
+  "name": "cross-session",
+  "version": "0.1.0",
+  "description": "See and control the messages that pass between your Claude sessions and agents: a live log, per-peer mute, outgoing secret redaction, and a manual send.",
+  "types": "./types/index.d.ts"
+}
